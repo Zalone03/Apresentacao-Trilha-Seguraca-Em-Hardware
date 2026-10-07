@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Segurança em Hardware // Seminário 05</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+<canvas id="gl"></canvas>
+
+<main id="deck">
+
+  <!-- 01 BOOT -->
+  <section class="slide s-center" data-scene="chip">
+    <div class="kicker type" data-type="> sudo ./seminario_05 --alvo=hardware"></div>
+    <h1 class="glitch mega" data-text="SEGURANÇA EM HARDWARE">SEGURANÇA EM HARDWARE</h1>
+    <div class="chips a" style="--d:.9s">
+      <span>SPECTRE</span><span>MELTDOWN</span><span>CANAL LATERAL</span>
+    </div>
+    <div class="credit a" style="--d:1.3s">GUILHERME VINÍCIUS DE SOUZA <i>//</i> ARQ054701 <i>//</i> IFSC GASPAR</div>
+    <div class="bootlog" id="bootlog"></div>
+  </section>
+
+  <!-- 02 CPU -->
+  <section class="slide s-left" data-scene="pipeline">
+    <div class="tagline a">// 01 · COMO A CPU GANHA TEMPO</div>
+    <h2 class="glitch" data-text="A CPU NÃO ESPERA">A CPU NÃO ESPERA</h2>
+    <ul class="icons">
+      <li class="a" style="--d:.5s"><span class="ico ico-pipe"><i></i><i></i><i></i><i></i></span><b>PIPELINE</b><em>linha de montagem</em></li>
+      <li class="a" style="--d:.8s"><span class="ico ico-fork"><i></i><i></i></span><b>PREDIÇÃO</b><em>aposta no caminho do if</em></li>
+      <li class="a" style="--d:1.1s"><span class="ico ico-ghost"><i></i></span><b>ESPECULAÇÃO</b><em>executa antes de ter certeza</em></li>
+    </ul>
+    <p class="term a" style="--d:1.6s">&gt; errou? descarta o resultado<span class="blink">_</span><br>&gt; <b>mas o rastro fica.</b></p>
+  </section>
+
+  <!-- 03 CACHE -->
+  <section class="slide s-left" data-scene="memory">
+    <div class="tagline a">// 02 · A MEMÓRIA QUE DEDURA</div>
+    <h2 class="glitch" data-text="O CACHE DEDURA">O CACHE DEDURA</h2>
+    <div class="bars">
+      <div class="bar a" style="--d:.4s;--pct:2%"><span>REG</span><i></i><b>&lt;1 ns</b></div>
+      <div class="bar a" style="--d:.55s;--pct:3%"><span>L1</span><i></i><b>~1 ns</b></div>
+      <div class="bar a" style="--d:.7s;--pct:6%"><span>L2</span><i></i><b>~4 ns</b></div>
+      <div class="bar a" style="--d:.85s;--pct:14%"><span>L3</span><i></i><b>~12 ns</b></div>
+      <div class="bar a" style="--d:1s;--pct:100%"><span>RAM</span><i></i><b>~100 ns</b></div>
+    </div>
+    <div class="probe a" style="--d:1.4s"><span id="probeTime">003 ns</span><b id="probeRes">HIT</b></div>
+    <p class="big-line a" style="--d:1.7s">rápido = <b>alguém usou</b></p>
+  </section>
+
+  <!-- 04 SIDE CHANNEL -->
+  <section class="slide s-top" data-scene="grid">
+    <div class="tagline a">// 03 · ATAQUE DE CANAL LATERAL</div>
+    <h2 class="glitch" data-text="ESCUTAR O COFRE">ESCUTAR O COFRE</h2>
+    <p class="sub a" style="--d:.3s">não lê o segredo: <b>deduz</b> pelo tempo</p>
+    <div class="cards">
+      <div class="card a" style="--d:.6s">
+        <div class="mini mini-fr"><i></i><span id="frT">--- ns</span></div>
+        <b>FLUSH+RELOAD</b><em>expulsa · espera · mede</em>
+      </div>
+      <div class="card a" style="--d:.85s">
+        <div class="mini mini-pp" id="pp"></div>
+        <b>PRIME+PROBE</b><em>ocupa · espera · mede</em>
+      </div>
+      <div class="card a" style="--d:1.1s">
+        <div class="mini mini-rh"><div class="row hammer">1111111111</div><div class="row" id="rhRow">0000000000</div></div>
+        <b>ROWHAMMER</b><em>martela a RAM · o bit vizinho vira</em>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 MELTDOWN -->
+  <section class="slide s-left" data-scene="meltdown">
+    <div class="tagline a">// 04 · CVE-2017-5754</div>
+    <h2 class="glitch huge" data-text="MELTDOWN">MELTDOWN</h2>
+    <ol class="steps">
+      <li class="a" style="--d:.5s"><b>01</b> lê o kernel antes da checagem</li>
+      <li class="a" style="--d:.75s"><b>02</b> o byte secreto marca o cache</li>
+      <li class="a" style="--d:1s"><b>03</b> mede o tempo e recupera o byte</li>
+    </ol>
+    <pre class="hexdump a" style="--d:1.3s" id="hexdump"></pre>
+  </section>
+
+  <!-- 06 SPECTRE -->
+  <section class="slide s-left" data-scene="spectre">
+    <div class="tagline a">// 05 · CVE-2017-5753 · CVE-2017-5715</div>
+    <h2 class="glitch huge" data-text="SPECTRE">SPECTRE</h2>
+    <pre class="code a" style="--d:.5s"><span class="k">if</span> (x &lt; tamanho) {
+   y = array2[array1[x] * 4096];
+}</pre>
+    <div class="train a" style="--d:.8s" id="train"></div>
+    <div class="duo a" style="--d:1.1s"><span><b>V1</b> pula o limite</span><span><b>V2</b> envenena o BTB</span></div>
+  </section>
+
+  <!-- 07 PATCHES -->
+  <section class="slide s-left" data-scene="shield">
+    <div class="tagline a">// 06 · CORREÇÕES</div>
+    <h2 class="glitch" data-text="A CONTA CHEGA">A CONTA CHEGA</h2>
+    <div class="cost">
+      <div class="crow a" style="--d:.5s;--pct:60%"><span>KPTI</span><em>vs Meltdown</em><i></i><b>até ~30%*</b></div>
+      <div class="crow a" style="--d:.8s;--pct:10%"><span>RETPOLINE</span><em>vs Spectre v2</em><i></i><b>poucos %</b></div>
+      <div class="crow a" style="--d:1.1s;--pct:100%"><span>GDS FIX</span><em>vs Downfall</em><i></i><b>até 50%</b></div>
+    </div>
+    <p class="note a" style="--d:1.4s">* cargas com muitas chamadas de sistema</p>
+    <p class="big-line a" style="--d:1.6s">segurança <b>custa ciclos</b></p>
+  </section>
+
+  <!-- 08 TIMELINE -->
+  <section class="slide s-left" data-scene="helix">
+    <div class="tagline a">// 07 · VULNERABILIDADES SEGUINTES</div>
+    <h2 class="glitch" data-text="O FANTASMA VOLTA">O FANTASMA VOLTA</h2>
+    <ul class="timeline" id="timeline">
+      <li class="a" style="--d:.4s"><b>2018</b><span>MELTDOWN + SPECTRE</span></li>
+      <li class="a" style="--d:.6s"><b>2019</b><span>MDS: RIDL · FALLOUT · ZOMBIELOAD</span></li>
+      <li class="a" style="--d:.8s"><b>2023</b><span>DOWNFALL (GDS)</span></li>
+      <li class="a" style="--d:1s"><b>2024</b><span>TIKTAG (ARM MTE)</span></li>
+      <li class="a" style="--d:1.2s"><b>2025</b><span>SLAP + FLOP (APPLE)</span></li>
+    </ul>
+  </section>
+
+  <!-- 09 DEFESAS -->
+  <section class="slide s-left" data-scene="vault">
+    <div class="tagline a">// 08 · DEFESAS NO SILÍCIO</div>
+    <h2 class="glitch" data-text="BLINDAGEM">BLINDAGEM</h2>
+    <div class="cols">
+      <div class="col a" style="--d:.5s">
+        <h3>COFRES · TEE</h3>
+        <p><b>SGX</b> enclave cifrado</p>
+        <p><b>SEV</b> VM cifrada</p>
+        <p><b>TRUSTZONE</b> mundo seguro</p>
+      </div>
+      <div class="col a" style="--d:.9s">
+        <h3>PONTEIRO VIGIADO</h3>
+        <p><b>CHERI</b> ponteiro com limite</p>
+        <p><b>MTE</b> etiqueta de 4 bits</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 FIM -->
+  <section class="slide s-final" data-scene="balance">
+    <div class="tagline a">// 09 · CONCLUSÃO</div>
+    <h2 class="glitch huge2" data-text="DESEMPENHO x SEGURANÇA">DESEMPENHO x SEGURANÇA</h2>
+    <p class="big-line a" style="--d:.6s">todo atalho <b>deixa rastro</b></p>
+    <div class="ask a" style="--d:1.2s">&gt; PERGUNTAS<span class="blink">_</span></div>
+    <div class="refs a" style="--d:1.5s">LIPP et al. 2018 · KOCHER et al. 2019 · INTEL PSIRT</div>
+  </section>
+
+</main>
+
+<div id="slices"></div>
+<div class="crt"></div>
+<div class="vignette"></div>
+
+<header class="hud">
+  <span class="hud-l">SEM_05 <i>//</i> HW_SEC <i>//</i> <span id="hudScene">BOOT</span></span>
+  <span class="hud-r"><span id="timer" title="T: iniciar/pausar · R: zerar">12:00</span></span>
+</header>
+<footer class="hud hud-b">
+  <span id="counter">01 / 10</span>
+  <div class="progress"><i id="progress"></i></div>
+  <span class="keys">← → navegar · F tela cheia · T cronômetro</span>
+</footer>
+
+<script src="three.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
